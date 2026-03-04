@@ -1,7 +1,8 @@
+CREATE DATABASE IF NOT EXISTS WalletDB;
+USE WalletDB;
+ 
 -- Tabla de Usuarios
-
--- Tabla de Usuarios
-CREATE TABLE IF NOT EXISTS user (
+CREATE TABLE IF NOT EXISTS `WalletDB`.`user` (
                                     document VARCHAR(50) NOT NULL UNIQUE PRIMARY KEY,
                                     type_document ENUM('DNI', 'PASSPORT', 'OTHER') NOT NULL,
                                     firstname VARCHAR(255) NOT NULL,
@@ -15,7 +16,7 @@ CREATE TABLE IF NOT EXISTS user (
 );
 
 -- Tabla de Cuentas
-CREATE TABLE IF NOT EXISTS account (
+CREATE TABLE IF NOT EXISTS `WalletDB`.`account` (
                                        phone_number VARCHAR(20) NOT NULL UNIQUE PRIMARY KEY,
                                        document VARCHAR(50) NOT NULL,
                                        account_number VARCHAR(30) NOT NULL UNIQUE,
@@ -29,11 +30,11 @@ CREATE TABLE IF NOT EXISTS account (
                                        currency ENUM('PEN', 'USD', 'EUR') DEFAULT 'PEN',
                                        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                        updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                                       FOREIGN KEY (document) REFERENCES user(document) ON DELETE CASCADE
+                                       FOREIGN KEY (document) REFERENCES `WalletDB`.`user`(document) ON DELETE CASCADE
 );
 
 -- Tabla de Transacciones
-CREATE TABLE IF NOT EXISTS transfer (
+CREATE TABLE IF NOT EXISTS `WalletDB`.`transfer` (
                                            origin_number VARCHAR(20) NOT NULL PRIMARY KEY,
                                            origin_account BIGINT NOT NULL,
                                            target_number VARCHAR(20) NOT NULL,
@@ -43,15 +44,15 @@ CREATE TABLE IF NOT EXISTS transfer (
                                            transfer_status ENUM('PENDING', 'COMPLETED', 'FAILED') DEFAULT 'PENDING',
                                            created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                            updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                                           FOREIGN KEY (origin_number) REFERENCES account(phone_number) ON DELETE CASCADE,
-                                           FOREIGN KEY (target_number) REFERENCES account(phone_number) ON DELETE CASCADE
+                                           FOREIGN KEY (origin_number) REFERENCES `WalletDB`.`account`(phone_number) ON DELETE CASCADE,
+                                           FOREIGN KEY (target_number) REFERENCES `WalletDB`.`account`(phone_number) ON DELETE CASCADE
 );
 
 -- Tabla de Saldo (para optimización y auditoría)
-CREATE TABLE IF NOT EXISTS balance (
+CREATE TABLE IF NOT EXISTS `WalletDB`.`balance` (
                                        phone_number VARCHAR(20)  NOT NULL PRIMARY KEY,
                                        origin_account BIGINT NOT NULL,
                                        balance DECIMAL(15,2) NOT NULL DEFAULT 0.00,
                                        last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                                       FOREIGN KEY (phone_number) REFERENCES account(phone_number) ON DELETE CASCADE
+                                       FOREIGN KEY (phone_number) REFERENCES `WalletDB`.`account`(phone_number) ON DELETE CASCADE
 );
