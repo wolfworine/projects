@@ -1,8 +1,12 @@
+DROP DATABASE WalletDB;
 CREATE DATABASE IF NOT EXISTS WalletDB;
 USE WalletDB;
+
  
+
 -- Tabla de Usuarios
-CREATE TABLE IF NOT EXISTS `WalletDB`.`user` (
+
+CREATE TABLE IF NOT EXISTS `WalletDB`.`user`(
                                     document VARCHAR(50) NOT NULL UNIQUE PRIMARY KEY,
                                     type_document ENUM('DNI', 'PASSPORT', 'OTHER') NOT NULL,
                                     firstname VARCHAR(255) NOT NULL,
@@ -16,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `WalletDB`.`user` (
 );
 
 -- Tabla de Cuentas
-CREATE TABLE IF NOT EXISTS `WalletDB`.`account` (
+CREATE TABLE IF NOT EXISTS `WalletDB`.`account`(
                                        phone_number VARCHAR(20) NOT NULL UNIQUE PRIMARY KEY,
                                        document VARCHAR(50) NOT NULL,
                                        account_number VARCHAR(30) NOT NULL UNIQUE,
@@ -34,11 +38,11 @@ CREATE TABLE IF NOT EXISTS `WalletDB`.`account` (
 );
 
 -- Tabla de Transacciones
-CREATE TABLE IF NOT EXISTS `WalletDB`.`transfer` (
+CREATE TABLE IF NOT EXISTS `WalletDB`.`transfer`(
                                            origin_number VARCHAR(20) NOT NULL PRIMARY KEY,
-                                           origin_account BIGINT NOT NULL,
+                                           origin_account VARCHAR(30) NOT NULL,
                                            target_number VARCHAR(20) NOT NULL,
-                                           target_account BIGINT NOT NULL,
+                                           target_account VARCHAR(30) NOT NULL,
                                            amount DECIMAL(15,2) NOT NULL CHECK (amount > 0),
                                            transfer_type ENUM('DEPOSIT', 'WITHDRAWAL', 'TRANSFER') NOT NULL,
                                            transfer_status ENUM('PENDING', 'COMPLETED', 'FAILED') DEFAULT 'PENDING',
@@ -49,10 +53,10 @@ CREATE TABLE IF NOT EXISTS `WalletDB`.`transfer` (
 );
 
 -- Tabla de Saldo (para optimización y auditoría)
-CREATE TABLE IF NOT EXISTS `WalletDB`.`balance` (
+CREATE TABLE IF NOT EXISTS `WalletDB`.`balance`(
                                        phone_number VARCHAR(20)  NOT NULL PRIMARY KEY,
-                                       origin_account BIGINT NOT NULL,
-                                       balance DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+                                       origin_account VARCHAR(30) NOT NULL,
+                                       balance_amount DECIMAL(15,2) NOT NULL DEFAULT 0.00,
                                        last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                                        FOREIGN KEY (phone_number) REFERENCES `WalletDB`.`account`(phone_number) ON DELETE CASCADE
 );
