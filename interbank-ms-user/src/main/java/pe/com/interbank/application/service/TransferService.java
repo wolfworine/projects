@@ -18,21 +18,26 @@ public class TransferService  implements TransferServicePort {
 
     @Override
     public Mono<Transfer> findById(String id) {
-        return this.transferPersistencePort.findById(id);
+        return transferPersistencePort.findById(id);
     }
 
     @Override
     public Flux<Transfer> findAll() {
-        return this.transferPersistencePort.findAll();
+        return transferPersistencePort.findAll();
     }
 
     @Override
     public Mono<Transfer> save(Transfer transfer) {
-        return this.transferPersistencePort.save(transfer);
+        return transferPersistencePort.save(transfer);
     }
 
     @Override
     public Mono<Transfer> update(String id, Transfer transfer) {
-        return this.transferPersistencePort.update(id,transfer);
+        return transferPersistencePort.update(id,transfer);
+    }
+
+    @Override
+    public Mono<Void> deleteById(String id) {
+        return transferPersistencePort.deleteById(id);
     }
 }

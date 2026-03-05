@@ -10,4 +10,5 @@ public interface BalanceServicePort {
     Flux<Balance> findAll();
     Mono<Balance> save(Balance balance);
     Mono<Balance> update(String id, Balance balance);
+    Mono<Void> deleteById(String id);
 }

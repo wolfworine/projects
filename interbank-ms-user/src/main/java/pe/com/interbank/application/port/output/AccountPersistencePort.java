@@ -1,7 +1,6 @@
 package pe.com.interbank.application.port.output;
 
 import pe.com.interbank.domain.model.Account;
-import pe.com.interbank.domain.model.User;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

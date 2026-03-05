@@ -24,7 +24,6 @@ import pe.com.interbank.utils.Constants;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import static pe.com.interbank.utils.ErrorCatalog.INVALID_USER;
 
@@ -46,7 +45,7 @@ public class AuthService implements AuthServicePort {
                 .filter(accountExists -> passwordEncoder.matches(request.password(), accountExists.getPassword()))
                 .switchIfEmpty(Mono.error(new InvalidCredentialException(INVALID_USER.getTitle())))
                 .flatMap(account -> userPersistencePort.findById(account.getDocument())
-                        .map(user -> new AuthResponse(tokenProvider.generateToken(account), user, List.of(account)))
+                        .map(user -> new AuthResponse(tokenProvider.generateToken(account), user, account))
                 );
     }
 
@@ -55,34 +54,56 @@ public class AuthService implements AuthServicePort {
     public Mono<AuthResponse> register(RegisterRequest request) {
         return createUserAndSave(request)
                 .flatMap(user -> createAccountAndSave(request)
-                        .map(account -> new AuthResponse(tokenProvider.generateToken(account),
-                                user, List.of(account)))
+                        .map(account -> new AuthResponse(tokenProvider.generateToken(account), user, account))
                 );
     }
 
     @Override
     public Mono<String> logout(Login login) {
-        return null;
+        // implement logout logic or throw an exception
+        throw new UnsupportedOperationException("Logout not implemented");
     }
 
     @Override
     public Mono<String> recoverPassword(Login login) {
-        return null;
+        // implement recover password logic or throw an exception
+        throw new UnsupportedOperationException("Recover password not implemented");
     }
 
+    // Crear y guardar usuario
     private Mono<User> createUserAndSave(RegisterRequest request) {
-        User newUser = userRestMapper.toUser(request);
-        newUser.setEnabled(Constants.ENABLED);
-        newUser.setCreatedDate(Constants.convertToLocalTimeZone(LocalDateTime.now()));
-        return userPersistencePort.save(newUser);
+        return Mono.defer(() -> {
+            User newUser = createUser(request);
+            return userPersistencePort.save(newUser);
+        });
     }
 
+    // Crear y guardar cuenta
     private Mono<Account> createAccountAndSave(RegisterRequest request) {
-        Account newAccount = accountRestMapper.toAccount(request);
-        newAccount.setPassword(passwordEncoder.encode(request.password()));
-        newAccount.setRole(RoleEnum.USER);
-        newAccount.setCurrency(CurrencyEnum.PEN);
-        return accountPersistencePort.save(newAccount);
+        return Mono.defer(() -> {
+            Account newAccount = createAccount(request);
+            return accountPersistencePort.save(newAccount);
+        });
+    }
+
+    private User createUser(RegisterRequest request) {
+        User user = userRestMapper.toUser(request);
+        user.setEnabled(Constants.ENABLED);
+        user.setCreatedDate(Constants.convertToLocalTimeZone(LocalDateTime.now()));
+        return user;
+    }
+
+    private Account createAccount(RegisterRequest request) {
+        Account account = accountRestMapper.toAccount(request);
+        account.setPassword(encodePassword(request.password()));
+        account.setRole(RoleEnum.USER);
+        account.setCurrency(CurrencyEnum.PEN);
+        return account;
+    }
+
+    // Método auxiliar para encriptar contraseña
+    private String encodePassword(String rawPassword) {
+        return passwordEncoder.encode(rawPassword);
     }
 
 }

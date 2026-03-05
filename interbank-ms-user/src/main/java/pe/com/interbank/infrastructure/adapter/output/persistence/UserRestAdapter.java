@@ -2,19 +2,24 @@ package pe.com.interbank.infrastructure.adapter.output.persistence;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 import pe.com.interbank.application.port.output.UserPersistencePort;
+import pe.com.interbank.domain.exception.DuplicateUserException;
+import pe.com.interbank.domain.exception.NotFoundException;
 import pe.com.interbank.domain.model.User;
+import pe.com.interbank.infrastructure.adapter.output.persistence.entity.TransferEntity;
+import pe.com.interbank.infrastructure.adapter.output.persistence.entity.UserEntity;
 import pe.com.interbank.infrastructure.adapter.output.persistence.mapper.UserPersistenceMapper;
 import pe.com.interbank.infrastructure.adapter.output.persistence.repository.UserRepository;
 import pe.com.interbank.utils.Constants;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.beans.FeatureDescriptor;
 import java.time.LocalDateTime;
-import java.util.Arrays;
+import java.util.Optional;
+
+import static pe.com.interbank.utils.Constants.USER;
+import static pe.com.interbank.utils.ErrorCatalog.USER_DUPLICATE;
 
 @Component
 @Slf4j
@@ -27,105 +32,67 @@ public class UserRestAdapter implements UserPersistencePort {
     @Override
     public Mono<User> findById(String id) {
         return userRepository.findById(id)
-                .map(mapper::toUser);
+                .map(mapper::toUser)
+                .doOnError(error -> log.error("Error fetching user by id {}: {}", id, error.getMessage(), error));
     }
 
     @Override
     public Flux<User> findAll() {
         return userRepository.findAll()
-                .map(mapper::toUser);
+                .map(mapper::toUser)
+                .doOnError(error -> log.error("Error fetching all users: {}", error.getMessage(), error));
     }
-/*
+
     @Override
-    public Mono<User> update(String id, User user) {
-        user.setUpdatedDate(Constants.convertToLocalTimeZone(LocalDateTime.now()));
-        user.setIsNewEntry(false);
-        return userRepository.findById(id)
-                .flatMap(savedUser -> {
-                    BeanUtils.copyProperties(user, savedUser, getNullPropertyNames(user));
-                    return userRepository.save(savedUser).map(mapper::toUser);
-                })
-                .doOnError(error -> log.error(Constants.ERROR_SAVING, "user", error.getMessage(), error));
+    public Mono<User> save(User user) {
+        return Mono.defer(() -> {
+            UserEntity entity = createUser(user);
+            return userRepository.save(entity)
+                    .map(mapper::toUser)
+                    .doOnError(error -> log.error(Constants.ERROR_SAVING, USER, error.getMessage(), error));
+        });
     }
 
-
-    private String[] getNullPropertyNames(Object source) {
-        return Arrays.stream(BeanUtils.getPropertyDescriptors(source.getClass()))
-                .map(FeatureDescriptor::getName)
-                .filter(propertyName -> {
-                    try {
-                        return BeanUtils.getPropertyDescriptor(source.getClass(), propertyName)
-                                .getReadMethod()
-                                .invoke(source) == null;
-                    } catch (Exception e) {
-                        return false;
-                    }
-                })
-                .toArray(String[]::new);
-    }*/
+    private UserEntity createUser(User user) {
+        UserEntity entity = mapper.toUserEntity(user);
+        entity.setCreatedDate(Constants.convertToLocalTimeZone(LocalDateTime.now()));
+        entity.setNewEntry(true);
+        return entity;
+    }
 
     @Override
     public Mono<User> update(String id, User user) {
-        return userRepository.findById(id)
-                .flatMap(savedUser -> {
-                    if (user.getFirstname() != null) savedUser.setFirstname(user.getFirstname());
-                    if (user.getLastname() != null) savedUser.setLastname(user.getLastname());
-                    if (user.getAddress() != null) savedUser.setAddress(user.getAddress());
-                    if (user.getEmail() != null) savedUser.setEmail(user.getEmail());
-                    savedUser.setUpdatedDate(Constants.convertToLocalTimeZone(LocalDateTime.now()));
-                    savedUser.setNewEntry(false);
-                    return userRepository.save(savedUser).map(mapper::toUser);
+        return Mono.defer(() -> userRepository.findById(id)
+                .switchIfEmpty(Mono.error(new NotFoundException("User not found with id: " + id)))
+                .flatMap(existingUser -> {
+                    updateUser(existingUser, user);
+                    return userRepository.save(existingUser);
                 })
-                .doOnError(error -> log.error(Constants.ERROR_SAVING, "user",error.getMessage() ,error));
-    }
-
-    @Override
-    public Mono<User> save(User user) {
-        log.info("save {}" , user);
-        user.setCreatedDate(Constants.convertToLocalTimeZone(LocalDateTime.now()));
-        user.setIsNewEntry(true);
-        return userRepository.save(mapper.toUserEntity(user))
                 .map(mapper::toUser)
-                .doOnError(error -> log.error(Constants.ERROR_SAVING, "user", error.getMessage(), error));
+                .doOnError(error -> log.error(Constants.ERROR_SAVING, Constants.USER, error.getMessage(), error))
+        );
     }
 
-
-/*
-    @Override
-    public Mono<User> save(User user) {
-        log.info("save {}" , user);
-        user.setCreatedDate(Constants.convertToLocalTimeZone(LocalDateTime.now()));
-        user.setIsNewEntry(true);
-        return userRepository.findById(user.getDocument())
-                .map(Optional::of)
-                .switchIfEmpty(Mono.just(Optional.empty()))
-                .flatMap(existingUser -> existingUser.isPresent()
-                        ? Mono.error(new DuplicateUserException(USER_DUPLICATE.getTitle()))
-                        :   userRepository.save(mapper.toUserEntity(user))
-                .map(mapper::toUser)
-                .doOnError(error -> log.error(Constants.ERROR_SAVING, "user",error.getMessage() ,error)));
+    private void  updateUser(UserEntity existingUser, User user) {
+        Optional.ofNullable(user.getFirstname()).ifPresent(existingUser::setFirstname);
+        Optional.ofNullable(user.getLastname()).ifPresent(existingUser::setLastname);
+        Optional.ofNullable(user.getAddress()).ifPresent(existingUser::setAddress);
+        Optional.ofNullable(user.getEmail()).ifPresent(existingUser::setEmail);
+        existingUser.setUpdatedDate(Constants.convertToLocalTimeZone(LocalDateTime.now()));
+        existingUser.setNewEntry(false);
     }
-*/
-/*
-    @Override
-    public Mono<User> save(User user) {
-        log.info("save {}", user);
-        user.setCreatedDate(Constants.convertToLocalTimeZone(LocalDateTime.now()));
-        user.setIsNewEntry(true);
-        return userRepository.saveIfNotExists(mapper.toUserEntity(user))
-                .switchIfEmpty(Mono.error(new DuplicateUserException(USER_DUPLICATE.getTitle())))
-                .map(mapper::toUser);
-    }*/
 
     @Override
     public Mono<Void> delete(String id) {
         return userRepository.findById(id)
-                .flatMap(savedUser -> {
-                    savedUser.setEnabled(false);
-                    savedUser.setNewEntry(false);
-                    return userRepository.save(savedUser).then();
+                .switchIfEmpty(Mono.error(new NotFoundException("User not found with id: " + id))) // Manejo de error
+                .flatMap(user -> {
+                    user.setEnabled(false);
+                    user.setNewEntry(false);
+                    return userRepository.save(user);
                 })
-                .doOnError(error -> log.error(Constants.ERROR_SAVING, "user",error.getMessage() ,error));
+                .then()
+                .doOnError(error -> log.error("Error disabling user with id {}: {}", id, error.getMessage(), error));
     }
 
 }

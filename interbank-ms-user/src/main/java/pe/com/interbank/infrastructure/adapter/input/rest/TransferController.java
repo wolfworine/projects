@@ -3,6 +3,7 @@ package pe.com.interbank.infrastructure.adapter.input.rest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,12 +35,11 @@ public class TransferController {
     @GetMapping("/{id}")
     public Mono<ResponseEntity<TransferResponse>> findById(@PathVariable String id) {
         return servicePort.findById(id)
-                .map(user -> ResponseEntity
-                        .status(HttpStatus.ACCEPTED)
+                .map(user -> ResponseEntity.ok()
                         .body(restMapper.toTransferResponse(user)));
     }
 
-    @PostMapping("/register")
+    @PostMapping("")
     public Mono<ResponseEntity<TransferResponse>> register(@RequestBody TransferRequest request) {
         return servicePort.save(restMapper.toTransfer(request))
                 .map(response -> ResponseEntity
@@ -50,8 +50,13 @@ public class TransferController {
     @PutMapping("/{id}")
     public Mono<ResponseEntity<TransferResponse>> update(@PathVariable String id, @RequestBody TransferRequest request) {
         return servicePort.update(id, restMapper.toTransfer(request))
-                .map(updatedUser -> ResponseEntity
-                        .status(HttpStatus.ACCEPTED)
+                .map(updatedUser -> ResponseEntity.ok()
                         .body(restMapper.toTransferResponse(updatedUser)));
+    }
+
+    @DeleteMapping("/{id}")
+    public Mono<ResponseEntity<Void>> delete(@PathVariable String id) {
+        return servicePort.deleteById(id)
+                .then(Mono.just(ResponseEntity.noContent().build()));
     }
 }

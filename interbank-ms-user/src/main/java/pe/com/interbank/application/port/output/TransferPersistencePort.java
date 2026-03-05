@@ -12,4 +12,5 @@ public interface TransferPersistencePort {
     Mono<Transfer> save(Transfer transfer);
 
     Mono<Transfer> update(String id, Transfer transfer);
+    Mono<Void> deleteById(String id);
 }

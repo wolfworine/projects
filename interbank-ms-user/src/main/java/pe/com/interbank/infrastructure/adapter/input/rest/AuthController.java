@@ -25,8 +25,7 @@ public class AuthController {
     @PostMapping("/login")
     public Mono<ResponseEntity<AuthResponse>> login(@RequestBody LoginRequest request) {
         return authService.login(request)
-                .map(login -> ResponseEntity
-                        .status(HttpStatus.OK)
+                .map(login -> ResponseEntity.ok()
                         .body(login));
     }
 

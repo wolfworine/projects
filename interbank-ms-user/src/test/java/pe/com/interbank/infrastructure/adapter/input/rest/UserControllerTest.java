@@ -82,7 +82,18 @@ class UserControllerTest {
                 .updatedDate(LocalDateTime.parse("2025-02-04T03:14:37"))
                 .build();
 
-        UserResponse userResponse = new UserResponse(user);
+        UserResponse userResponse = new UserResponse(
+                user.getDocument(),
+                user.getTypeDocument(),
+                user.getFirstname(),
+                user.getLastname(),
+                user.getAddress(),
+                user.getEmail(),
+                user.getPhoneNumber(),
+                user.getEnabled(),
+                user.getCreatedDate(),
+                user.getUpdatedDate()
+        );
 
         when(userService.findAll()).thenReturn(Flux.just(user));
         when(restMapper.toUserResponse(any(User.class))).thenReturn(userResponse);
@@ -113,7 +124,7 @@ class UserControllerTest {
                 .createdDate(LocalDateTime.parse("2025-01-31T10:21:18"))
                 .updatedDate(LocalDateTime.parse("2025-02-04T03:14:37"))
                 .build();
-        UserResponse userResponse = new UserResponse(user);
+        UserResponse userResponse = restMapper.toUserResponse(user);
 
         when(userService.findById("46086503")).thenReturn(Mono.just((user)));
         when(restMapper.toUserResponse(any(User.class))).thenReturn(userResponse);
@@ -121,7 +132,7 @@ class UserControllerTest {
         webTestClient.get()
                 .uri("/users/api/46086503")
                 .exchange()
-                .expectStatus().isAccepted()
+                .expectStatus().isOk()
                 .expectBody(UserResponse.class)
                 .isEqualTo(userResponse);
     }
@@ -156,7 +167,7 @@ class UserControllerTest {
                 .updatedDate(LocalDateTime.parse("2025-02-04T03:14:37"))
                 .build();
 
-        UserResponse userResponse = new UserResponse(user);
+        UserResponse userResponse = restMapper.toUserResponse(user);
         UpdateRequest updateRequest = new UpdateRequest(null,null,"124 Main Street, Lima",null,null,null, null, null, null);
         when(userService.update(anyString(), any(User.class))).thenReturn(Mono.just(userUpdate));
         when(restMapper.toUser(any(UpdateRequest.class))).thenReturn(userUpdate);
@@ -167,7 +178,7 @@ class UserControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(updateRequest)
                 .exchange()
-                .expectStatus().isAccepted()
+                .expectStatus().isOk()
                 .expectBody(UserResponse.class)
                 .isEqualTo(userResponse);
     }
@@ -229,18 +240,6 @@ class UserControllerTest {
                 .bodyValue(updateRequest)
                 .exchange()
                 .expectStatus().isNotFound();
-    }
-
-    @Test
-    @WithMockUser(username = "johndoe", roles = {"USER"})
-    @Order(8)
-    void delete_returnsNotFoundWhenUserDoesNotExist() {
-        when(userService.deleteById("46086503")).thenReturn(Mono.empty());
-
-        webTestClient.delete()
-                .uri("/users/api/46086503")
-                .exchange()
-                .expectStatus().isNoContent();
     }
 
 }

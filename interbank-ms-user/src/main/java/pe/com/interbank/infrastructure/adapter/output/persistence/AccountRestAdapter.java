@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import pe.com.interbank.application.port.output.AccountPersistencePort;
 import pe.com.interbank.domain.model.Account;
+import pe.com.interbank.infrastructure.adapter.output.persistence.entity.AccountEntity;
 import pe.com.interbank.infrastructure.adapter.output.persistence.mapper.AccountPersistenceMapper;
 import pe.com.interbank.infrastructure.adapter.output.persistence.repository.AccountRepository;
 import pe.com.interbank.utils.Constants;
@@ -12,6 +13,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
+
+import static pe.com.interbank.utils.Constants.ACCOUNT;
+import static pe.com.interbank.utils.Constants.USER;
 
 @Component
 @Slf4j
@@ -39,37 +44,51 @@ public class AccountRestAdapter implements AccountPersistencePort {
                 .map(mapper::toAccount);
     }
 
-    @Override
-    public Mono<Account> save(Account account) {
-        account.setCreatedDate(Constants.convertToLocalTimeZone(LocalDateTime.now()));
-        account.setIsNewEntry(true);
-        return accountRepository.save(mapper.toAccountEntity(account))
-                .map(mapper::toAccount)
-                .doOnError(error -> log.error(Constants.ERROR_SAVING, Constants.ACCOUNT,error.getMessage() ,error));
-    }
 
     @Override
+    public Mono<Account> save(Account account) {
+        return Mono.defer(() -> {
+            AccountEntity entity = createAccount(account);
+            return accountRepository.save(entity)
+                    .map(mapper::toAccount)
+                    .doOnError(error -> log.error(Constants.ERROR_SAVING, ACCOUNT, error.getMessage(), error));
+        });
+    }
+    @Override
     public Mono<Account> update(String id, Account account) {
-        return accountRepository.findById(id)
-                .flatMap(savedAccount -> {
-                    if (account.getAccountNumber() != null) savedAccount.setAccountNumber(account.getAccountNumber());
-                    if (account.getBankingEntity() != null) savedAccount.setBankingEntity(account.getBankingEntity());
-                    if (account.getDeviceSerial() != null) savedAccount.setDeviceSerial(account.getDeviceSerial());
-                    if (account.getDailyLimit() != null) savedAccount.setDailyLimit(account.getDailyLimit());
-                    if (account.getOperationLimit() != null) savedAccount.setOperationLimit(account.getOperationLimit());
-                    if (account.getPassword() != null) savedAccount.setPassword(account.getPassword());
-                    if (account.getCurrency() != null) savedAccount.setCurrency(account.getCurrency());
-                    savedAccount.setUpdatedDate(Constants.convertToLocalTimeZone(LocalDateTime.now()));
-                    savedAccount.setNewEntry(false);
-                    return accountRepository.save(savedAccount).map(mapper::toAccount);
-                })
-                .doOnError(error -> log.error(Constants.ERROR_SAVING, Constants.ACCOUNT,error.getMessage() ,error));
+        return Mono.defer(() -> accountRepository.findById(id)
+                .flatMap(existingAccount -> updateAndSave(existingAccount, account))
+                .doOnError(error -> log.error(Constants.ERROR_SAVING, ACCOUNT, error.getMessage(), error)));
     }
 
     @Override
     public Mono<Void> deleteById(String id) {
-        return  accountRepository.deleteById(id)
-                .doOnError(error -> log.error(Constants.ERROR_DELETED, Constants.ACCOUNT,error.getMessage() ,error));
+        return accountRepository.deleteById(id)
+                .doOnError(error -> log.error(Constants.ERROR_DELETED, Constants.ACCOUNT, error.getMessage(), error));
+    }
+
+    private AccountEntity createAccount(Account account) {
+        AccountEntity entity = mapper.toAccountEntity(account);
+        entity.setCreatedDate(Constants.convertToLocalTimeZone(LocalDateTime.now()));
+        entity.setNewEntry(true);
+        return entity;
+    }
+
+    private Mono<Account> updateAndSave(AccountEntity existingAccount, Account account) {
+        updateAccount(existingAccount, account);
+        existingAccount.setUpdatedDate(Constants.convertToLocalTimeZone(LocalDateTime.now()));
+        existingAccount.setNewEntry(false);
+        return accountRepository.save(existingAccount).map(mapper::toAccount);
+    }
+
+    private void updateAccount(AccountEntity existingAccount, Account account) {
+        Optional.ofNullable(account.getAccountNumber()).ifPresent(existingAccount::setAccountNumber);
+        Optional.ofNullable(account.getBankingEntity()).ifPresent(existingAccount::setBankingEntity);
+        Optional.ofNullable(account.getDeviceSerial()).ifPresent(existingAccount::setDeviceSerial);
+        Optional.ofNullable(account.getDailyLimit()).ifPresent(existingAccount::setDailyLimit);
+        Optional.ofNullable(account.getOperationLimit()).ifPresent(existingAccount::setOperationLimit);
+        Optional.ofNullable(account.getPassword()).ifPresent(existingAccount::setPassword);
+        Optional.ofNullable(account.getCurrency()).ifPresent(existingAccount::setCurrency);
     }
 
 }

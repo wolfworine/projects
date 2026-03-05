@@ -1,7 +1,6 @@
 package pe.com.interbank.infrastructure.adapter.output.persistence.mapper;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import pe.com.interbank.domain.model.User;
 import pe.com.interbank.infrastructure.adapter.output.persistence.entity.UserEntity;
 

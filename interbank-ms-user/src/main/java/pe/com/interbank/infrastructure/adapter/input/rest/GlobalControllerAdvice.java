@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import pe.com.interbank.domain.exception.InvalidCredentialException;
+import pe.com.interbank.domain.exception.NotFoundException;
 import pe.com.interbank.domain.exception.UserNotFoundException;
 import pe.com.interbank.infrastructure.adapter.input.rest.model.output.ErrorResponse;
 import pe.com.interbank.utils.Constants;
@@ -19,6 +20,7 @@ import java.util.List;
 
 import static pe.com.interbank.utils.ErrorCatalog.GENERIC_ERROR;
 import static pe.com.interbank.utils.ErrorCatalog.INVALID_USER;
+import static pe.com.interbank.utils.ErrorCatalog.NOT_FOUND;
 import static pe.com.interbank.utils.ErrorCatalog.USER_DUPLICATE;
 import static pe.com.interbank.utils.ErrorCatalog.USER_NOT_FOUND;
 
@@ -32,6 +34,17 @@ public class GlobalControllerAdvice  {
                 .code(USER_DUPLICATE.getCode())
                 .message(USER_DUPLICATE.getTitle())
                 .details(Collections.singletonList(ex.getMessage()))
+                .timestamp(Constants.convertLocalDateTimeToString(LocalDateTime.now()))
+                .build();
+    }
+
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(NotFoundException.class)
+    public ErrorResponse handleNotFoundException() {
+        return ErrorResponse.builder()
+                .code(NOT_FOUND.getCode())
+                .message(NOT_FOUND.getTitle())
+                .details(List.of(NOT_FOUND.getDescription()))
                 .timestamp(Constants.convertLocalDateTimeToString(LocalDateTime.now()))
                 .build();
     }

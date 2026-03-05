@@ -11,14 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.annotation.Transient;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import pe.com.interbank.application.port.input.AuthServicePort;
-import pe.com.interbank.application.port.output.AccountPersistencePort;
-import pe.com.interbank.application.port.output.UserPersistencePort;
 import pe.com.interbank.application.service.JwtService;
 import pe.com.interbank.domain.exception.DuplicateUserException;
 import pe.com.interbank.domain.exception.UserNotFoundException;
@@ -26,25 +23,19 @@ import pe.com.interbank.domain.model.Account;
 import pe.com.interbank.domain.model.User;
 import pe.com.interbank.infrastructure.adapter.config.ApplicationConfig;
 import pe.com.interbank.infrastructure.adapter.config.SecurityConfig;
-import pe.com.interbank.infrastructure.adapter.input.rest.mapper.AccountRestMapper;
 import pe.com.interbank.infrastructure.adapter.input.rest.model.enums.RoleEnum;
 import pe.com.interbank.infrastructure.adapter.input.rest.model.enums.TypeDocumentEnum;
 import pe.com.interbank.infrastructure.adapter.input.rest.model.input.LoginRequest;
 import pe.com.interbank.infrastructure.adapter.input.rest.model.input.RegisterRequest;
 import pe.com.interbank.infrastructure.adapter.input.rest.model.output.AuthResponse;
-import pe.com.interbank.infrastructure.adapter.output.persistence.entity.UserEntity;
 import pe.com.interbank.infrastructure.adapter.output.persistence.repository.AccountRepository;
 import pe.com.interbank.infrastructure.adapter.output.persistence.repository.UserRepository;
 import pe.com.interbank.infrastructure.adapter.security.JwtAuthenticationManager;
 import pe.com.interbank.infrastructure.adapter.security.JwtServerAuthenticationConverter;
-import pe.com.interbank.infrastructure.adapter.security.TokenProvider;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -68,7 +59,6 @@ class AuthControllerTest {
     private UserRepository userRepository;
     @MockitoBean
     private AccountRepository accountRepository;
-    private TokenProvider tokenProvider;
 
     private String jsonRequest;
 
@@ -104,7 +94,7 @@ class AuthControllerTest {
                 .updatedDate(LocalDateTime.parse("2025-02-04T03:14:37"))
                 .build();
 
-        AuthResponse response = new AuthResponse("eyJhbGciOiJIUzI1NiJ9...", user, Collections.singletonList(account));
+        AuthResponse response = new AuthResponse("eyJhbGciOiJIUzI1NiJ9...", user, account);
 
         when(authService.login(any(LoginRequest.class))).thenReturn(Mono.just(response));
 
@@ -181,7 +171,7 @@ class AuthControllerTest {
                 .createdDate(LocalDateTime.parse("2025-01-31T10:21:18"))
                 .updatedDate(LocalDateTime.parse("2025-02-04T03:14:37"))
                 .build();
-        AuthResponse response = new AuthResponse("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFtayIsInJvbGVzIjpbIlVTRVIiXSwiaWF0IjoxNzM3OTk0NzExLCJleHAiOjE3Mzc5OTY1MTF9.HJcs1xx2LBDnRHshpUTqUPxs-P92Dje97jgkG2cy0C0", user, Collections.singletonList(account));
+        AuthResponse response = new AuthResponse("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFtayIsInJvbGVzIjpbIlVTRVIiXSwiaWF0IjoxNzM3OTk0NzExLCJleHAiOjE3Mzc5OTY1MTF9.HJcs1xx2LBDnRHshpUTqUPxs-P92Dje97jgkG2cy0C0", user, account);
         when(authService.register(any(RegisterRequest.class))).thenReturn(Mono.just(response));
 
         webTestClient.post()

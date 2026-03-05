@@ -10,4 +10,5 @@ public interface TransferServicePort {
     Mono<Transfer> findById(String id);
     Mono<Transfer> save(Transfer transfer);
     Mono<Transfer> update(String id, Transfer transfer);
+    Mono<Void> deleteById(String id);
 }

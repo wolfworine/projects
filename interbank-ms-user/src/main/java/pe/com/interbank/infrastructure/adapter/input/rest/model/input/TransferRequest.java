@@ -5,7 +5,7 @@ import pe.com.interbank.infrastructure.adapter.input.rest.model.enums.TransferTy
 
 import java.math.BigDecimal;
 
-public record TransferRequest(String originNumber, Long originAccount, String targetNumber,
-        Long targetAccount, BigDecimal amount, TransferTypeEnum transferType,
+public record TransferRequest(String originNumber, String originAccount, String targetNumber,
+                              String targetAccount, BigDecimal amount, TransferTypeEnum transferType,
         TransferStatusEnum transferStatus) {
 }

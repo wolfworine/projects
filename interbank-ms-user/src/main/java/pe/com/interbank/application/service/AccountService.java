@@ -36,18 +36,25 @@ public class AccountService implements AccountServicePort {
 
     @Override
     public Mono<Account> save(Account account) {
-        account.setPassword(this.passwordEncoder.encode(account.getPassword()));
-        return  this.accountPersistencePort.save(account);
+        return encodePassword(account)
+                .flatMap(accountPersistencePort::save);
     }
 
     @Override
     public Mono<Account> update(String id, Account account) {
-        if (account.getPassword() != null) account.setPassword(this.passwordEncoder.encode(account.getPassword()));
-        return accountPersistencePort.update(id,account);
+        return encodePassword(account)
+                .flatMap(encoded -> accountPersistencePort.update(id, encoded));
     }
 
     @Override
     public Mono<Void> deleteById(String id) {
         return accountPersistencePort.deleteById(id);
+    }
+
+    private Mono<Account> encodePassword(Account account) {
+        return Mono.justOrEmpty(account.getPassword())
+                .map(passwordEncoder::encode)
+                .doOnNext(account::setPassword)
+                .thenReturn(account);
     }
 }

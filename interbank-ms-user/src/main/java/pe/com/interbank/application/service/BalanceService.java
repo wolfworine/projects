@@ -18,23 +18,28 @@ public class BalanceService implements BalanceServicePort {
 
     @Override
     public Mono<Balance> findById(String id) {
-        return this.balancePersistencePort.findById(id);
+        return balancePersistencePort.findById(id);
     }
 
     @Override
     public Flux<Balance> findAll() {
-        return this.balancePersistencePort.findAll();
+        return balancePersistencePort.findAll();
     }
 
 
     @Override
     public Mono<Balance> save(Balance balance) {
-        return this.balancePersistencePort.save(balance);
+        return balancePersistencePort.save(balance);
     }
 
     @Override
     public Mono<Balance> update(String id, Balance balance) {
-        return this.balancePersistencePort.update(id,balance);
+        return balancePersistencePort.update(id,balance);
+    }
+
+    @Override
+    public Mono<Void> deleteById(String id) {
+        return balancePersistencePort.deleteById(id);
     }
 
 }
